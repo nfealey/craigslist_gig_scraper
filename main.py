@@ -1,31 +1,31 @@
-from lib2to3.refactor import get_all_fix_names
-import requests
-from bs4 import BeautifulSoup
 import csv
-
-# def write_dict_to_csv(dict_to_write: dict):
-#     field_names= ['Title', 'href']
-#     with open('export.csv', 'w') as csvfile:
-#         writer = csv.DictWriter(csvfile, fieldnames=field_names)
-#         writer.writeheader()
-#         writer.writerows(dict_to_write)
-
+import requests
+from IPython import embed
+from bs4 import BeautifulSoup
+import re
 
 def get_number_of_listings(url: str):
     """
-    Gets the maxium number of listings for this type of search
+    Gets the total number of listings/gigs for this type of search
     """
     listing_page = requests.get(url)
     soup = BeautifulSoup(listing_page.text, "html.parser")
     return int(soup.find(class_='totalcount').string)
 
 
-def get_all_titles_and_links(url: str):
+def get_all_titles_and_links_from_specific_url(url: str):
+    """
+    Gets the title and links for a gigs page page
+
+    :param url - URL of target page
+    :return data - Dictionary containing the title and href/link
+
+    """
     listing_page = requests.get(url)
     soup = BeautifulSoup(listing_page.text, "html.parser")
 
     data = {}
-    for i in soup.findAll(class_='result-row'):
+    for count, i in enumerate(soup.findAll(class_='result-row')):
         a_tag = i.find(class_='result-title')
         # print(a_tag)
 
@@ -33,7 +33,7 @@ def get_all_titles_and_links(url: str):
         title=a_tag.string
         href=a_tag['href']
 
-        data[title] = href
+        data[f'{title}{count}'] = href
 
     return data
 
@@ -48,15 +48,43 @@ def get_url_steps_for_pagination(number_of_listings: int):
         steps.append(i)
     return steps
 
+
+def get_all_listings(steps: list):
+    listings_from_all_pages = {}
+    for page in steps:
+        titles_and_links_from_gigs_page = get_all_titles_and_links_from_specific_url(f'https://boston.craigslist.org/search/ggg?s={page}&is_paid=yes&sort=date')
+        listings_from_all_pages = listings_from_all_pages | titles_and_links_from_gigs_page
+
+    return listings_from_all_pages
+
 def main():
     """
     """
     number_of_listings = get_number_of_listings('https://boston.craigslist.org/search/ggg?is_paid=yes&sort=date')
-    print(get_url_steps_for_pagination(number_of_listings))
+    steps = get_url_steps_for_pagination(number_of_listings) 
+
+    data_from_all_listings = get_all_listings(steps)
+    print(data_from_all_listings)
+    embed()
+
+    for title, value in data_from_all_listings.items():
+        # print(titles) 
+        # print(value)
+
+        # Looks for $Number/Week
+        per_week = re.search("[$]\d+/week+|[$]\d+/Week+", title)
+        if per_week:
+            print(title)
+            print(per_week)
+
+        #if per_week = re.search("[$]\d+/Day+", title)
 
 
 
-    # titles_and_links = get_all_titles_and_links('https://boston.craigslist.org/search/ggg?is_paid=yes&sort=date')
+
+
+
+    # titles_and_links = get_all_titles_and_links_from_specific_url('https://boston.craigslist.org/search/ggg?is_paid=yes&sort=date')
     
     #for keys, value in titles_and_links.items():
     #    print(keys)
