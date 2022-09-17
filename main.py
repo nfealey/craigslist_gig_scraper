@@ -2,14 +2,12 @@ import re
 import requests
 from IPython import embed
 from bs4 import BeautifulSoup
+from util import remove_non_numbers, get_url_steps_for_pagination
 
+# Pull this value in from whatever scheduling tool that is typically used
+CONFIG = {'number_of_working_hours_in_a_day': 24,
+          'target_url': 'https://boston.craigslist.org/search/ggg?is_paid=yes&sort=date'}
 
-def remove_non_numbers(str1: str):
-    """
-    Removes non-numbers from strings
-    """
-    import re
-    return re.sub('[^0-9]','', str1)
 
 def get_number_of_listings(url: str):
     """
@@ -45,17 +43,6 @@ def get_all_titles_and_links_from_specific_url(url: str, include_duplicates: boo
     return data
 
 
-def get_url_steps_for_pagination(number_of_listings: int):
-    """
-    Returns the steps/index numbers required to capture all of the data
-    This is the number that is passed into the URL to properly handle pagination
-    """
-    steps = []
-    for i in range(0,number_of_listings,120):
-        steps.append(i)
-    return steps
-
-
 def get_all_listings(steps: list, include_duplicates: bool):
     listings_from_all_pages = {}
     for page in steps:
@@ -64,18 +51,8 @@ def get_all_listings(steps: list, include_duplicates: bool):
 
     return listings_from_all_pages
 
-def main():
-    """
-    TODO Add flag for duplicates
-    """
-    number_of_listings = get_number_of_listings('https://boston.craigslist.org/search/ggg?is_paid=yes&sort=date')
-    steps = get_url_steps_for_pagination(number_of_listings) 
 
-    
-    data_from_all_listings = get_all_listings(steps, True)
-    print(data_from_all_listings)
-    embed()
-
+def find_potential_earnings_in_a_day(data_from_all_listings, number_of_working_hours_in_a_day: int):
     """
     Examples).
     "Earn $26 to $52 per hour" (Selecting the upper range value of 52 per hour)
@@ -97,46 +74,46 @@ def main():
             amount_earned_in_one_week = int(per_week.group().split('/')[0][1:])
             one_day_of_earnings = amount_earned_in_one_week/7
             total_amount += one_day_of_earnings
-            # print(f'title: {title}\n'
-            #       f'amount_earned_in_one_week: {amount_earned_in_one_week}\n'
-            #       f'amount_earned_in_one_day: {one_day_of_earnings}\n')
+            print(f'title: {title}\n'
+                  f'amount_earned_in_one_week: {amount_earned_in_one_week}\n'
+                  f'amount_earned_in_one_day: {one_day_of_earnings}\n')
         if per_week_1:
             amount_earned_in_one_week =  int(remove_non_numbers(per_week_1.group().split(' ')[0]))
             one_day_of_earnings = amount_earned_in_one_week/7
             total_amount += one_day_of_earnings
-            # print(f'title: {title}\n'
-            #       f'amount_earned_in_one_week: {amount_earned_in_one_week}\n'
-            #       f'amount_earned_in_one_day: {one_day_of_earnings}\n')
+            print(f'title: {title}\n'
+                  f'amount_earned_in_one_week: {amount_earned_in_one_week}\n'
+                  f'amount_earned_in_one_day: {one_day_of_earnings}\n')
         elif per_day_1:
             one_day_of_earnings = int(per_day_1.group().split('/')[0][1:])
             total_amount += one_day_of_earnings
-            # print(f'title: {title}\n'
-            #       f'amount_earned_in_one_day: {one_day_of_earnings}\n')
+            print(f'title: {title}\n'
+                  f'amount_earned_in_one_day: {one_day_of_earnings}\n')
         elif per_day_2:
             one_day_of_earnings = int(remove_non_numbers(per_day_2.group().split(' ')[0]))
             total_amount += one_day_of_earnings
-            # print(f'title: {title}\n'
-            #       f'amount_earned_in_one_day: {one_day_of_earnings}\n')
+            print(f'title: {title}\n'
+                  f'amount_earned_in_one_day: {one_day_of_earnings}\n')
         elif hourly:
             hourly = int(remove_non_numbers(hourly.group().split('/')[0]))
-            one_day_of_earnings = hourly * 24
+            one_day_of_earnings = hourly * number_of_working_hours_in_a_day
             total_amount += one_day_of_earnings
-            # print(f'title: {title}\n'
-            #       f'amount_earned_in_one_hour: {hourly}\n'
-            #       f'amount_earned_in_one_day: {one_day_of_earnings}\n')
+            print(f'title: {title}\n'
+                  f'amount_earned_in_one_hour: {hourly}\n'
+                  f'amount_earned_in_one_day: {one_day_of_earnings}\n')
         elif per_hour:
             hourly = int(remove_non_numbers(per_hour.group().split(' ')[0]))
-            one_day_of_earnings = hourly * 24
+            one_day_of_earnings = hourly * number_of_working_hours_in_a_day
             total_amount += one_day_of_earnings
-            # print(f'title: {title}\n'
-            #       f'amount_earned_in_one_hour: {hourly}\n'
-            #       f'amount_earned_in_one_day: {one_day_of_earnings}\n')
+            print(f'title: {title}\n'
+                  f'amount_earned_in_one_hour: {hourly}\n'
+                  f'amount_earned_in_one_day: {one_day_of_earnings}\n')
         elif other:
-            # Other captures more of the edge cases (most inaccuracies will be in this section) 
-            # These are the values that do NOT have the rate like per day or per Hour. They 
+            # Other captures more of the edge cases (most inaccuracies will be in this section)
+            # These are the values that do NOT have the rate like per day or per Hour. They
             # are mostly made of up fixed priced gigs. The code is assuming these can be completed within one day
 
-            # The following ensures we exclude application fees from our calculation 
+            # The following ensures we exclude application fees from our calculation
             # Example).    " SURROGATES NEEDED - $500 application BONUS - Earn $50k- $70k+ "
             #              This will be excluded from the calculation
             is_value_an_application_fee = re.search("[$]\d+ application[ ]", title)
@@ -145,9 +122,22 @@ def main():
                 total_amount += amount
                 print(f'Other: {title}\n'
                       f'amount: {amount}\n')
-                
-            
+    embed()
+    return total_amount
 
-    # Exclude SURROGATES NEEDED - $500 application BONUS - Earn $50k- $70k+ (Boston
+
+def main():
+    """
+    TODO Add flag for duplicates
+    """
+
+    number_of_listings = get_number_of_listings(CONFIG['target_url'])
+    pagination_steps = get_url_steps_for_pagination(number_of_listings)
+
+    data_from_all_listings = get_all_listings(pagination_steps, True)
+
+    total_amount = find_potential_earnings_in_a_day(data_from_all_listings, CONFIG['number_of_working_hours_in_a_day'])
+    print(f'Total Amount: {total_amount}')
+
 
 main()
