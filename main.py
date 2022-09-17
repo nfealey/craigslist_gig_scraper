@@ -1,8 +1,8 @@
-import csv
+import re
 import requests
 from IPython import embed
 from bs4 import BeautifulSoup
-import re
+
 
 def remove_non_numbers(str1: str):
     """
@@ -20,7 +20,7 @@ def get_number_of_listings(url: str):
     return int(soup.find(class_='totalcount').string)
 
 
-def get_all_titles_and_links_from_specific_url(url: str):
+def get_all_titles_and_links_from_specific_url(url: str, include_duplicates: bool):
     """
     Gets the title and links for a gigs page page
 
@@ -34,14 +34,14 @@ def get_all_titles_and_links_from_specific_url(url: str):
     data = {}
     for count, i in enumerate(soup.findAll(class_='result-row')):
         a_tag = i.find(class_='result-title')
-        # print(a_tag)
-
         #data_id=a_tag['data-id']
         title=a_tag.string
         href=a_tag['href']
 
-        data[f'{title} {count}'] = href
-
+        if include_duplicates: 
+            data[f'{title} {count}'] = href
+        else:
+            data[f'{title} {count}'] = href
     return data
 
 
@@ -56,10 +56,10 @@ def get_url_steps_for_pagination(number_of_listings: int):
     return steps
 
 
-def get_all_listings(steps: list):
+def get_all_listings(steps: list, include_duplicates: bool):
     listings_from_all_pages = {}
     for page in steps:
-        titles_and_links_from_gigs_page = get_all_titles_and_links_from_specific_url(f'https://boston.craigslist.org/search/ggg?s={page}&is_paid=yes&sort=date')
+        titles_and_links_from_gigs_page = get_all_titles_and_links_from_specific_url(f'https://boston.craigslist.org/search/ggg?s={page}&is_paid=yes&sort=date', include_duplicates)
         listings_from_all_pages = listings_from_all_pages | titles_and_links_from_gigs_page
 
     return listings_from_all_pages
@@ -71,7 +71,8 @@ def main():
     number_of_listings = get_number_of_listings('https://boston.craigslist.org/search/ggg?is_paid=yes&sort=date')
     steps = get_url_steps_for_pagination(number_of_listings) 
 
-    data_from_all_listings = get_all_listings(steps)
+    
+    data_from_all_listings = get_all_listings(steps, True)
     print(data_from_all_listings)
     embed()
 
@@ -79,8 +80,6 @@ def main():
     Examples).
     "Earn $26 to $52 per hour" (Selecting the upper range value of 52 per hour)
     " $30+ Per Hour "  --> $30 per hour
-
-
 
     """
 
@@ -150,18 +149,5 @@ def main():
             
 
     # Exclude SURROGATES NEEDED - $500 application BONUS - Earn $50k- $70k+ (Boston
-
-
-
-
-
-
-    # titles_and_links = get_all_titles_and_links_from_specific_url('https://boston.craigslist.org/search/ggg?is_paid=yes&sort=date')
-    
-    #for keys, value in titles_and_links.items():
-    #    print(keys)
-    # print(titles_and_links.keys)
-    # write_dict_to_csv(titles_and_links)
-
 
 main()
