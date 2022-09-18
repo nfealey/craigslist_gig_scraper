@@ -2,13 +2,13 @@ import re
 import requests
 from IPython import embed
 from bs4 import BeautifulSoup
-from util import remove_non_numbers, get_url_steps_for_pagination, extract_one_day_of_earnings_from_text
+from util import get_url_steps_for_pagination, extract_one_day_of_earnings_from_text
 import time
 
 # Pull this value in from whatever scheduling tool that is typically used
 CONFIG = {'number_of_working_hours_in_a_day': 24,
           'target_url': 'https://boston.craigslist.org/search/ggg?is_paid=yes&sort=date',
-          'include_duplicate_gigs': True}
+          'include_duplicate_gigs': False}
 
 
 def get_number_of_listings(url: str):
@@ -22,7 +22,7 @@ def get_number_of_listings(url: str):
 
 def get_all_titles_and_links_from_specific_url(url: str, include_duplicates: bool):
     """
-    Gets the title and links for a gigs page page
+    Gets the title and links for a gigs page
 
     :param url - URL of target page
     :param include_duplicates - Flag on whether duplicate listings/gigs should be included
@@ -45,7 +45,10 @@ def get_all_titles_and_links_from_specific_url(url: str, include_duplicates: boo
     return data
 
 
-def get_all_listings(steps: list, include_duplicates: bool):
+def gets_data_from_all_gigs(steps: list, include_duplicates: bool):
+    """
+    Gets all titles and links from all listings in Boston
+    """
     listings_from_all_pages = {}
     for page in steps:
         titles_and_links_from_gigs_page = get_all_titles_and_links_from_specific_url(f'https://boston.craigslist.org/search/ggg?s={page}&is_paid=yes&sort=date', include_duplicates)
@@ -90,7 +93,6 @@ def find_potential_earnings_using_gig_descriptions(links: list, number_of_workin
 
             # section_tag = soup.find(id='postingbody').text
             description = soup.find(id='postingbody').text
-            embed()
 
             one_day_of_earnings = extract_one_day_of_earnings_from_text(description, number_of_working_hours_in_a_day)
             if isinstance(one_day_of_earnings, int):
@@ -103,24 +105,26 @@ def find_potential_earnings_using_gig_descriptions(links: list, number_of_workin
     return total_amount
 
 
-
 def main():
     """
     TODO Add flag for duplicates
     """
-
+    # Gets the total number of listings or gigs
     number_of_listings = get_number_of_listings(CONFIG['target_url'])
+
+    # Breaks up the total number of listings/gigs into pieces to make pagination easier
     pagination_steps = get_url_steps_for_pagination(number_of_listings)
 
-    data_from_all_listings = get_all_listings(pagination_steps, CONFIG['include_duplicate_gigs'])
+    titles_and_links = gets_data_from_all_gigs(pagination_steps, CONFIG['include_duplicate_gigs'])
 
-    total_amount_from_titles, list_of_links_that_dont_have_price_in_title = find_potential_earnings_using_gig_titles(data_from_all_listings, CONFIG['number_of_working_hours_in_a_day'])
+    total_amount_from_titles, list_of_links_that_dont_have_price_in_title = find_potential_earnings_using_gig_titles(titles_and_links, CONFIG['number_of_working_hours_in_a_day'])
     print(f'Total Amount Earned from titles: {total_amount_from_titles}')
 
     total_amount_from_descriptions = find_potential_earnings_using_gig_descriptions(list_of_links_that_dont_have_price_in_title, CONFIG['number_of_working_hours_in_a_day'])
     total = total_amount_from_descriptions + total_amount_from_titles
-    print(f'total potential earnings for one day: {total}')
 
+    print(f'Total Amount Earned from titles: {total_amount_from_titles}')
+    print(f'Total potential earnings for all gigs in Boston in one day: {total}')
 
 
 
