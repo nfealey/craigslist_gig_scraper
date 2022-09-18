@@ -126,7 +126,7 @@ main()
 
 # Features to add
 # Try Catches to ensure no numbers exist
-
+# TODO Print only in debug mode?
 
 
 

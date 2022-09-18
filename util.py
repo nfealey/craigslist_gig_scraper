@@ -97,8 +97,8 @@ def extract_one_day_of_earnings_from_text(text: str, number_of_working_hours_in_
         is_value_an_application_fee = re.search('[$]\d+ application[ ]', text)
         if not is_value_an_application_fee:
             amount = int(remove_non_numeric_values(other.group()))
-            print(f'Other: {text}\n'
-                  f'amount: {amount}\n')
+            print(f'Other\n'
+                  f'Amount: {amount}\n')
             return amount
     else:
         # Returns X when the item is a leftover or if no match occurs. This is important for the first pass through
