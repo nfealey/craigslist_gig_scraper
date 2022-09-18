@@ -2,7 +2,7 @@ import re
 import requests
 from IPython import embed
 from bs4 import BeautifulSoup
-from util import remove_non_numbers, get_url_steps_for_pagination
+from util import remove_non_numbers, get_url_steps_for_pagination, extract_one_day_of_earnings_from_text
 import time
 
 # Pull this value in from whatever scheduling tool that is typically used
@@ -25,6 +25,7 @@ def get_all_titles_and_links_from_specific_url(url: str, include_duplicates: boo
     Gets the title and links for a gigs page page
 
     :param url - URL of target page
+    :param include_duplicates - Flag on whether duplicate listings/gigs should be included
     :return data - Dictionary containing the title and href/link
 
     """
@@ -34,7 +35,6 @@ def get_all_titles_and_links_from_specific_url(url: str, include_duplicates: boo
     data = {}
     for count, i in enumerate(soup.findAll(class_='result-row')):
         a_tag = i.find(class_='result-title')
-        #data_id=a_tag['data-id']
         title=a_tag.string
         href=a_tag['href']
 
@@ -54,74 +54,7 @@ def get_all_listings(steps: list, include_duplicates: bool):
     return listings_from_all_pages
 
 
-def extract_one_day_of_earnings_from_text(text: str, number_of_working_hours_in_a_day: int):
-    per_week = re.search('[$]\d+/week+|[$]\d+/Week+', text)
-    per_week_1 = re.search('[$]\d+[ ]Per[ ]Week+|[$]\d+[ ]PER[ ]WEEK+', text)
-    per_day_1 = re.search('[$]\d+/day+|[$]\d+/Day+', text)
-    per_day_2 = re.search('[$]\d+[ ]Daily', text)
-    # Added [$]\d+[+]/HR+'
-    hourly = re.search(
-        '[$]\d+/hour+|[$]\d+/Hour+|[$]\d+/hr+|[$]\d+/HR+|[$]\d+[+]/hr+|[$]\d+[.]\d+/HR+|[$]\d+[ ]/HR+|[$]\d+[+]/HR+', text)
-    per_hour = re.search(
-        '[$]\d+[ ]per[ ]hour+|[$]\d+[+][ ]Per[ ]Hour+|[$]\d+[ ]an[ ]hour+|[$]\d+[ ]per[ ]hr+|[$]\d+[ ]hour[ ]', text)
-    other = re.search('[$]\d+[,]\d+|[$]\d+', text)  # Are values with no /per hour or day.
-    if per_week:
-        amount_earned_in_one_week = int(per_week.group().split('/')[0][1:])
-        one_day_of_earnings = amount_earned_in_one_week / 7
 
-        print(f'title: {text}\n'
-              f'amount_earned_in_one_week: {amount_earned_in_one_week}\n'
-              f'amount_earned_in_one_day: {one_day_of_earnings}\n')
-        return one_day_of_earnings
-    if per_week_1:
-        amount_earned_in_one_week = int(remove_non_numbers(per_week_1.group().split(' ')[0]))
-        one_day_of_earnings = amount_earned_in_one_week / 7
-        print(f'title: {text}\n'
-              f'amount_earned_in_one_week: {amount_earned_in_one_week}\n'
-              f'amount_earned_in_one_day: {one_day_of_earnings}\n')
-    elif per_day_1:
-        one_day_of_earnings = int(remove_non_numbers(per_day_1.group().split('/')[0]))
-        print(f'title: {text}\n'
-              f'amount_earned_in_one_day: {one_day_of_earnings}\n')
-        return one_day_of_earnings
-    elif per_day_2:
-        one_day_of_earnings = int(remove_non_numbers(per_day_2.group().split(' ')[0]))
-        print(f'title: {text}\n'
-              f'amount_earned_in_one_day: {one_day_of_earnings}\n')
-        return one_day_of_earnings
-    elif hourly:
-        hourly = int(remove_non_numbers(hourly.group().split('/')[0]))
-        one_day_of_earnings = hourly * number_of_working_hours_in_a_day
-        print(f'title: {text}\n'
-              f'amount_earned_in_one_hour: {hourly}\n'
-              f'amount_earned_in_one_day: {one_day_of_earnings}\n')
-        return one_day_of_earnings
-    elif per_hour:
-        hourly = int(remove_non_numbers(per_hour.group().split(' ')[0]))
-        one_day_of_earnings = hourly * number_of_working_hours_in_a_day
-        print(f'title: {text}\n'
-              f'amount_earned_in_one_hour: {hourly}\n'
-              f'amount_earned_in_one_day: {one_day_of_earnings}\n')
-        return one_day_of_earnings
-    elif other:
-        # Other captures more of the edge cases (most inaccuracies will be in this section)
-        # These are the values that do NOT have the rate like per day or per Hour. They
-        # are mostly made of up fixed priced gigs. The code is assuming these can be completed within one day
-
-        # The following ensures we exclude application fees from our calculation
-        # Example).    " SURROGATES NEEDED - $500 application BONUS - Earn $50k- $70k+ "
-        #              This will be excluded from the calculation
-        is_value_an_application_fee = re.search('[$]\d+ application[ ]', text)
-        if not is_value_an_application_fee:
-            amount = int(remove_non_numbers(other.group()))
-            print(f'Other: {text}\n'
-                  f'amount: {amount}\n')
-            return amount
-    else:
-        print(f'Else: {text}')
-        # Returns X when the item is a leftover. This is needed for the first pass
-        return 'x'
-        # list_of_links_that_dont_have_price_in_title.append(href)
 
 
 def find_potential_earnings_using_gig_titles(data_from_all_listings, number_of_working_hours_in_a_day: int):
@@ -149,102 +82,24 @@ def find_potential_earnings_using_gig_titles(data_from_all_listings, number_of_w
 def look_for_earnings_in_page_descriptions(links: list, number_of_working_hours_in_a_day: int):
     total_amount = 0
     for link in links:
-        time.sleep(1)
         try:
+            time.sleep(1)
             listing_page = requests.get(link)
 
             soup = BeautifulSoup(listing_page.text, "html.parser")
 
-            section_tag = soup.find(id='postingbody')
-            description = section_tag.text
+            # section_tag = soup.find(id='postingbody').text
+            description = soup.find(id='postingbody').text
 
-            per_week = re.search('[$]\d+/week+|[$]\d+/Week+', description)
-            per_week_1 = re.search('[$]\d+[ ]Per[ ]Week+|[$]\d+[ ]PER[ ]WEEK+', description)
-            per_day_1 = re.search('[$]\d+/day+|[$]\d+/Day+', description)
-            per_day_2 = re.search('[$]\d+[ ]Daily', description)
-            hourly = re.search('[$]\d+/hour+|[$]\d+/Hour+|[$]\d+/hr+|[$]\d+/HR+|[$]\d+[+]/hr+|[$]\d+[.]\d+/HR+|[$]\d+[ ]/HR+|[$]\d+[+]/HR+', description)
-            per_hour = re.search('[$]\d+[ ]per[ ]hour+|[$]\d+[+][ ]Per[ ]Hour+|[$]\d+[ ]an[ ]hour+|[$]\d+[ ]per[ ]hr+|[$]\d+[ ]hour[ ]', description)
-            other = re.search('[$]\d+[,]\d+|[$]\d+', description)  # Are values with no /per hour or day.
-            if per_week:
-                amount_earned_in_one_week = int(per_week.group().split('/')[0][1:])
-                one_day_of_earnings = amount_earned_in_one_week/7
+            one_day_of_earnings = extract_one_day_of_earnings_from_text(description, number_of_working_hours_in_a_day)
+            if isinstance(one_day_of_earnings, int):
                 total_amount += one_day_of_earnings
-                print(f'per_week\n'
-                      f'link: {link}\n'
-                      f'amount_earned_in_one_week: {amount_earned_in_one_week}\n'
-                      f'amount_earned_in_one_day: {one_day_of_earnings}\n')
-            if per_week_1:
-                amount_earned_in_one_week = int(remove_non_numbers(per_week_1.group().split(' ')[0]))
-                one_day_of_earnings = amount_earned_in_one_week/7
-                total_amount += one_day_of_earnings
-                print(f'per_week_1\n'
-                      f'amount_earned_in_one_week: {amount_earned_in_one_week}\n'
-                      f'amount_earned_in_one_day: {one_day_of_earnings}\n')
-            elif per_day_1:
-                one_day_of_earnings = int(remove_non_numbers(per_day_1.group().split('/')[0]))
-                description += one_day_of_earnings
-                print(f'per_day_1\n'
-                      f'link: {link}\n'
-                      f'amount_earned_in_one_day: {one_day_of_earnings}\n')
-            elif per_day_2:
-                one_day_of_earnings = int(remove_non_numbers(per_day_2.group().split(' ')[0]))
-                description += one_day_of_earnings
-                print(f'per_day_2\n'
-                      f'link: {link}\n'
-                      f'amount_earned_in_one_day: {one_day_of_earnings}\n')
-            elif hourly:
-                hourly = int(remove_non_numbers(hourly.group().split('/')[0]))
-                one_day_of_earnings = hourly * number_of_working_hours_in_a_day
-                total_amount += one_day_of_earnings
-                print(f'hourly\n'
-                      f'link: {link}\n'
-                      f'amount_earned_in_one_hour: {hourly}\n'
-                      f'amount_earned_in_one_day: {one_day_of_earnings}\n')
-            elif per_hour:
-                hourly = int(remove_non_numbers(per_hour.group().split(' ')[0]))
-                one_day_of_earnings = hourly * number_of_working_hours_in_a_day
-                total_amount += one_day_of_earnings
-                print(f'per_hour\n'
-                      f'link: {link}\n'
-                      f'amount_earned_in_one_hour: {hourly}\n'
-                      f'amount_earned_in_one_day: {one_day_of_earnings}\n')
-            elif other:
-                # Other captures more of the edge cases (most inaccuracies will be in this section)
-                # These are the values that do NOT have the rate like per day or per Hour. They
-                # are mostly made of up fixed priced gigs. The code is assuming these can be completed within one day
-
-                # The following ensures we exclude application fees from our calculation
-                # Example).    " SURROGATES NEEDED - $500 application BONUS - Earn $50k- $70k+ "
-                #              This will be excluded from the calculation
-                is_value_an_application_fee = re.search("[$]\d+ application[ ]", description)
-                if not is_value_an_application_fee:
-                    print(f'other.group(): {other.group()}')
-                    amount = int(remove_non_numbers(other.group()))
-                    total_amount += amount
-                    print(f'other\n'
-                          f'link: {link}\n'
-                          f'amount: {amount}\n')
-            else:
-                print(f'Else: {link}\n')
 
         except:
-            pass
+            print(f'URL Failed to load: {link}')
+            continue
 
         return total_amount
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -261,7 +116,7 @@ def main():
     total_amount, list_of_links_that_dont_have_price_in_title = find_potential_earnings_using_gig_titles(data_from_all_listings, CONFIG['number_of_working_hours_in_a_day'])
 
     print(f'Total Amount Earned from all of the gigs: {total_amount}')
-    # look_for_earnings_in_page_descriptions(list_of_links_that_dont_have_price_in_title, CONFIG['number_of_working_hours_in_a_day'])
+    look_for_earnings_in_page_descriptions(list_of_links_that_dont_have_price_in_title, CONFIG['number_of_working_hours_in_a_day'])
 
 
 
