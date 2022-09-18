@@ -31,8 +31,7 @@ def main():
         total_amount_from_descriptions = find_potential_earnings_using_gig_descriptions(links_without_price_in_title, CONFIG['number_of_working_hours_in_a_day'])
         total = total_amount_from_descriptions + total_amount_from_titles
 
-    print(f'Total Amount Earned from titles: {total_amount_from_titles}\n'
-          f'Total potential earnings for all gigs in Boston in one day: {total}')
+    print(f'You can make ${total}/day\n')
     embed()
 
 
