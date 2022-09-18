@@ -7,3 +7,4 @@
 __pycache__/util.cpython-310.pyc
 scrap
 *.pyc
+.idea/workspace.xml

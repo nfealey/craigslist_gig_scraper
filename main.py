@@ -16,8 +16,6 @@ CONFIG = {'number_of_working_hours_in_a_day': 24,
 
 
 def main():
-    """
-    """
     # Gets the total number of listings or gigs
     number_of_listings = get_number_of_listings(CONFIG['target_url'])
 

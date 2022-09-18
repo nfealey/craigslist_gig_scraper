@@ -56,6 +56,9 @@ def find_potential_earnings_using_gig_titles(data_from_all_listings: Tuple, numb
     """
     Finds the potential_earnings for completing all boston gigs in one day by extracting data from the
     titles of listings/gigs.
+
+    :param data_from_all_listings - Title and links for all the listings/gigs
+    :param number_of_working_hours_in_a_day - Number of working hours in a day
     """
     list_of_links_that_dont_have_price_in_title = []
 
