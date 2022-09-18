@@ -56,10 +56,6 @@ def gets_data_from_all_gigs(steps: list, include_duplicates: bool):
 
     return listings_from_all_pages
 
-
-
-
-
 def find_potential_earnings_using_gig_titles(data_from_all_listings, number_of_working_hours_in_a_day: int):
     """
     Examples).
@@ -107,7 +103,6 @@ def find_potential_earnings_using_gig_descriptions(links: list, number_of_workin
 
 def main():
     """
-    TODO Add flag for duplicates
     """
     # Gets the total number of listings or gigs
     number_of_listings = get_number_of_listings(CONFIG['target_url'])
@@ -126,19 +121,11 @@ def main():
     print(f'Total Amount Earned from titles: {total_amount_from_titles}')
     print(f'Total potential earnings for all gigs in Boston in one day: {total}')
 
-
-
-
-
 main()
 
 
 # Features to add
 # Try Catches to ensure no numbers exist
-#
-
-# TODO
-# Add remove non numbers from every imported value
 
 
 
