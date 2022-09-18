@@ -41,7 +41,7 @@ def get_all_titles_and_links_from_specific_url(url: str, include_duplicates: boo
         if include_duplicates: 
             data[f'{title} {count}'] = href
         else:
-            data[f'{title} {count}'] = href
+            data[f'{title}'] = href
     return data
 
 
@@ -120,7 +120,7 @@ def main():
 
     print(f'Total Amount Earned from titles: {total_amount_from_titles}')
     print(f'Total potential earnings for all gigs in Boston in one day: {total}')
-
+    embed()
 main()
 
 
