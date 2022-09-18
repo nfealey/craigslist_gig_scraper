@@ -1,11 +1,14 @@
 import re
+import logging
+
+
 def remove_non_numeric_values(str1: str):
     """
     Removes non-numeric values from strings
 
     :param str1 - String to remove non-numeric values from.
     """
-    return re.sub('[^0-9]','', str1)
+    return re.sub('[^0-9]', '', str1)
 
 
 def get_url_steps_for_pagination(number_of_listings: int):
@@ -38,53 +41,55 @@ def extract_one_day_of_earnings_from_text(text: str, number_of_working_hours_in_
     :return int/string: Integer of potential earnings for specific gig (one day of work).
                         Will return 'x' if text does not make any matches
 
+
+    Examples).
+    "Earn $26 to $52 per hour" (Selecting the upper range value of 52 per hour)
+    " $30+ Per Hour "  --> $30 per hour
     """
     per_week = re.search('[$]\d+/week+|[$]\d+/Week+', text)
     per_week_1 = re.search('[$]\d+[ ]Per[ ]Week+|[$]\d+[ ]PER[ ]WEEK+', text)
     per_day_1 = re.search('[$]\d+/day+|[$]\d+/Day+', text)
     per_day_2 = re.search('[$]\d+[ ]Daily', text)
-    hourly = re.search(
-        '[$]\d+/hour+|[$]\d+/Hour+|[$]\d+/hr+|[$]\d+/HR+|[$]\d+[+]/hr+|[$]\d+[.]\d+/HR+|[$]\d+[ ]/HR+|[$]\d+[+]/HR+', text)
-    per_hour = re.search(
-        '[$]\d+[ ]per[ ]hour+|[$]\d+[+][ ]Per[ ]Hour+|[$]\d+[ ]an[ ]hour+|[$]\d+[ ]per[ ]hr+|[$]\d+[ ]hour[ ]', text)
+    hourly = re.search('[$]\d+/hour+|[$]\d+/Hour+|[$]\d+/hr+|[$]\d+/HR+|[$]\d+[+]/hr+|[$]\d+[.]\d+/HR+|[$]\d+[ ]/HR+|[$]\d+[+]/HR+', text)
+    per_hour = re.search('[$]\d+[ ]per[ ]hour+|[$]\d+[+][ ]Per[ ]Hour+|[$]\d+[ ]an[ ]hour+|[$]\d+[ ]per[ ]hr+|[$]\d+[ ]hour[ ]', text)
     other = re.search('[$]\d+[,]\d+|[$]\d+', text)  # Are values with no /per hour or day.
     if per_week:
         amount_earned_in_one_week = int(per_week.group().split('/')[0][1:])
         one_day_of_earnings = amount_earned_in_one_week / 7
 
-        print(f'title: {text}\n'
-              f'amount_earned_in_one_week: {amount_earned_in_one_week}\n'
-              f'amount_earned_in_one_day: {one_day_of_earnings}\n')
+        logging.debug(f'title: {text}\n'
+                      f'amount_earned_in_one_week: {amount_earned_in_one_week}\n'
+                      f'amount_earned_in_one_day: {one_day_of_earnings}\n')
         return one_day_of_earnings
     if per_week_1:
         amount_earned_in_one_week = int(remove_non_numeric_values(per_week_1.group().split(' ')[0]))
         one_day_of_earnings = amount_earned_in_one_week / 7
-        print(f'title: {text}\n'
-              f'amount_earned_in_one_week: {amount_earned_in_one_week}\n'
-              f'amount_earned_in_one_day: {one_day_of_earnings}\n')
+        logging.debug(f'title: {text}\n'
+                      f'amount_earned_in_one_week: {amount_earned_in_one_week}\n'
+                      f'amount_earned_in_one_day: {one_day_of_earnings}\n')
     elif per_day_1:
         one_day_of_earnings = int(remove_non_numeric_values(per_day_1.group().split('/')[0]))
-        print(f'title: {text}\n'
-              f'amount_earned_in_one_day: {one_day_of_earnings}\n')
+        logging.debug(f'title: {text}\n'
+                      f'amount_earned_in_one_day: {one_day_of_earnings}\n')
         return one_day_of_earnings
     elif per_day_2:
         one_day_of_earnings = int(remove_non_numeric_values(per_day_2.group().split(' ')[0]))
-        print(f'title: {text}\n'
-              f'amount_earned_in_one_day: {one_day_of_earnings}\n')
+        logging.debug(f'title: {text}\n'
+                      f'amount_earned_in_one_day: {one_day_of_earnings}\n')
         return one_day_of_earnings
     elif hourly:
         hourly = int(remove_non_numeric_values(hourly.group().split('/')[0]))
         one_day_of_earnings = hourly * number_of_working_hours_in_a_day
-        print(f'title: {text}\n'
-              f'amount_earned_in_one_hour: {hourly}\n'
-              f'amount_earned_in_one_day: {one_day_of_earnings}\n')
+        logging.debug(f'title: {text}\n'
+                      f'amount_earned_in_one_hour: {hourly}\n'
+                      f'amount_earned_in_one_day: {one_day_of_earnings}\n')
         return one_day_of_earnings
     elif per_hour:
         hourly = int(remove_non_numeric_values(per_hour.group().split(' ')[0]))
         one_day_of_earnings = hourly * number_of_working_hours_in_a_day
-        print(f'title: {text}\n'
-              f'amount_earned_in_one_hour: {hourly}\n'
-              f'amount_earned_in_one_day: {one_day_of_earnings}\n')
+        logging.debug(f'title: {text}\n'
+                      f'amount_earned_in_one_hour: {hourly}\n'
+                      f'amount_earned_in_one_day: {one_day_of_earnings}\n')
         return one_day_of_earnings
     elif other:
         # Other captures more of the edge cases (most inaccuracies will be in this section)
@@ -97,8 +102,8 @@ def extract_one_day_of_earnings_from_text(text: str, number_of_working_hours_in_
         is_value_an_application_fee = re.search('[$]\d+ application[ ]', text)
         if not is_value_an_application_fee:
             amount = int(remove_non_numeric_values(other.group()))
-            print(f'Other\n'
-                  f'Amount: {amount}\n')
+            logging.debug(f'Other\n'
+                          f'Amount: {amount}\n')
             return amount
     else:
         # Returns X when the item is a leftover or if no match occurs. This is important for the first pass through
