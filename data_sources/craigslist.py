@@ -100,8 +100,8 @@ def find_potential_earnings_using_gig_descriptions(links: list, number_of_workin
             if isinstance(one_day_of_earnings, int):
                 total_amount += one_day_of_earnings
 
-        except:
-            print(f'URL Failed to load: {link}')
+        except Exception as e:
+            logging.exception(f'URL Failed to load: {link}\nException {e}')
             continue
 
     return total_amount
