@@ -79,7 +79,7 @@ def find_potential_earnings_using_gig_titles(data_from_all_listings, number_of_w
     return total_amount, list_of_links_that_dont_have_price_in_title
 
 
-def look_for_earnings_in_page_descriptions(links: list, number_of_working_hours_in_a_day: int):
+def find_potential_earnings_using_gig_descriptions(links: list, number_of_working_hours_in_a_day: int):
     total_amount = 0
     for link in links:
         try:
@@ -90,6 +90,7 @@ def look_for_earnings_in_page_descriptions(links: list, number_of_working_hours_
 
             # section_tag = soup.find(id='postingbody').text
             description = soup.find(id='postingbody').text
+            embed()
 
             one_day_of_earnings = extract_one_day_of_earnings_from_text(description, number_of_working_hours_in_a_day)
             if isinstance(one_day_of_earnings, int):
@@ -99,7 +100,7 @@ def look_for_earnings_in_page_descriptions(links: list, number_of_working_hours_
             print(f'URL Failed to load: {link}')
             continue
 
-        return total_amount
+    return total_amount
 
 
 
@@ -113,10 +114,15 @@ def main():
 
     data_from_all_listings = get_all_listings(pagination_steps, CONFIG['include_duplicate_gigs'])
 
-    total_amount, list_of_links_that_dont_have_price_in_title = find_potential_earnings_using_gig_titles(data_from_all_listings, CONFIG['number_of_working_hours_in_a_day'])
+    total_amount_from_titles, list_of_links_that_dont_have_price_in_title = find_potential_earnings_using_gig_titles(data_from_all_listings, CONFIG['number_of_working_hours_in_a_day'])
+    print(f'Total Amount Earned from titles: {total_amount_from_titles}')
 
-    print(f'Total Amount Earned from all of the gigs: {total_amount}')
-    look_for_earnings_in_page_descriptions(list_of_links_that_dont_have_price_in_title, CONFIG['number_of_working_hours_in_a_day'])
+    total_amount_from_descriptions = find_potential_earnings_using_gig_descriptions(list_of_links_that_dont_have_price_in_title, CONFIG['number_of_working_hours_in_a_day'])
+    total = total_amount_from_descriptions + total_amount_from_titles
+    print(f'total potential earnings for one day: {total}')
+
+
+
 
 
 
