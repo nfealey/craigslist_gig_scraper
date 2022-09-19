@@ -1,6 +1,5 @@
 import sys
 import logging
-from IPython import embed
 from util import get_url_steps_for_pagination
 from data_sources.craigslist import get_number_of_listings, gets_data_from_all_gigs, \
                                     find_potential_earnings_using_gig_titles, \
@@ -11,7 +10,7 @@ from data_sources.craigslist import get_number_of_listings, gets_data_from_all_g
 logging.basicConfig(stream=sys.stderr, level=logging.INFO)
 CONFIG = {'number_of_working_hours_in_a_day': 24,
           'target_url': 'https://boston.craigslist.org/search/ggg?is_paid=yes&sort=date',
-          'do_description_scan': True,
+          'do_description_scan': False,
           'include_duplicate_gigs': True}
 
 
@@ -32,7 +31,6 @@ def main():
         total = total_amount_from_descriptions + total_amount_from_titles
 
     print(f'You can make ${total}/day\n')
-    embed()
 
 
 main()
