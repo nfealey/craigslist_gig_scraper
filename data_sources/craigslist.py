@@ -60,7 +60,7 @@ def find_potential_earnings_using_gig_titles(data_from_all_listings: Tuple, numb
     :param data_from_all_listings - Title and links for all the listings/gigs
     :param number_of_working_hours_in_a_day - Number of working hours in a day
     """
-    list_of_links_that_dont_have_price_in_title = []
+    links_without_price_in_title = []
 
     total_amount = 0
     for title, href in data_from_all_listings.items():
@@ -71,9 +71,9 @@ def find_potential_earnings_using_gig_titles(data_from_all_listings: Tuple, numb
         else:
             # This adds the links where titles did not have any matches with the regex checks. This is so we
             # Can do a second pass with a deeper inspection on the descriptions of the page at a later time.
-            list_of_links_that_dont_have_price_in_title.append(href)
+            links_without_price_in_title.append(href)
 
-    return total_amount, list_of_links_that_dont_have_price_in_title
+    return total_amount, links_without_price_in_title
 
 
 def find_potential_earnings_using_gig_descriptions(links: list, number_of_working_hours_in_a_day: int):

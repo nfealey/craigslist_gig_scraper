@@ -9,9 +9,9 @@ from data_sources.craigslist import get_number_of_listings, gets_data_from_all_g
 # Pull this value in from whatever scheduling tool that is typically used
 logging.basicConfig(stream=sys.stderr, level=logging.INFO)
 CONFIG = {'number_of_working_hours_in_a_day': 24,
-          'target_url': 'https://boston.craigslist.org/search/ggg?is_paid=yes&sort=date',
-          'do_description_scan': False,
-          'include_duplicate_gigs': True}
+          'do_description_scan': True,
+          'include_duplicate_gigs': True,
+          'target_url': 'https://boston.craigslist.org/search/ggg?is_paid=yes&sort=date'}
 
 
 def main():
