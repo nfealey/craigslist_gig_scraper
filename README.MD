@@ -47,7 +47,7 @@ CONFIG = {'number_of_working_hours_in_a_day': 24,
 ## Support
 * My program is failing on the get_number_of_listings method? 
   * Confirm that the target URL is properly configured in the CONFIG variable. Please test this URL yourself if you 
-  * continue to have problems
+    continue to have problems
 * My final result is significantly different from I expected?
   * If the result is significantly different from what you were expecting you can put the program into 
     debug mode to get a more detailed readout during the regex matches. This is useful incase some bad data is getting 
