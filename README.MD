@@ -56,4 +56,5 @@ CONFIG = {'number_of_working_hours_in_a_day': 24,
    ```logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)``` to 
 
 ## Future Improvements
-1. Adjust the code so it can be put into debug mode by only needing to adjust the CONFIG variable. 
+1. Upgrade the application so someone could put it into debug mode by adjusting the CONFIG variable. 
+2. Add a feature that allows you to show you the most profitable gigs (passing in a minimums earning requirement threshold )
