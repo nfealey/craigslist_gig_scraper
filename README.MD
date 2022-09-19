@@ -24,13 +24,16 @@ There's a few important configurations that can be adjusted here.
  **number_of_working_hours_in_a_day**: This setting will 
 affect the final calculation in the calculation. 
  This sets the assumed number of working hours in a day. So if you only plan on
- making the daily calculation based off of an 8hour workday.
+ making the daily calculation based off of an 8 hour workday.
 
 **do_description_scan**: If set to true, this will do a scan of the gig/listing descriptions/ 
-                         in the event earnings information could not be found in the listing title.  
+                         in the event earnings information could not be found in the listing title.
+
 **include_duplicate_gigs**: If set to true, this will include duplicate gigs/listings. 
                             By duplicate listings I'm referring to 
-                            listings that are typically identical, but have different locations listed throughout Boston.  
+                            listings that are typically identical, but have different 
+                            locations listed throughout Boston.
+
 **target_url** You can adjust the target URL to another city or update the existing one if it changes
  
 
